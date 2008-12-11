@@ -1,3 +1,10 @@
+// WARNING
+//
+// this code is REALLY REALLY REALLY REALLY messy and ugly and bad.  i started
+// off with some old code and awkwardly retrofitted it into what it is.  the
+// result is a mix of c and c++, different syntax styles, etc.  it's horrible.
+// i was in a rush.
+
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
