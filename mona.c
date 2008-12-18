@@ -25,8 +25,8 @@ extern "C" {
 #include <string>
 #include <iostream>
 
-#define WIDTH 100
-#define HEIGHT 116
+#define WIDTH 200
+#define HEIGHT 200
 
 using namespace std;
 
@@ -54,7 +54,7 @@ struct CairoXDrawable {
     Display * dpy;
 };
 
-#define NUM_POINTS 3
+#define NUM_POINTS 6
 #define NUM_SHAPES 100
 
 typedef struct {
@@ -158,10 +158,13 @@ void mutate(void)
 
 int MAX_FITNESS = -1;
 
+guchar * goal_data = NULL;
+
 int difference(cairo_surface_t * test_surf, cairo_surface_t * goal_surf)
 {
     guchar * test_data = cairo_image_surface_get_data(test_surf);
-    guchar * goal_data = cairo_image_surface_get_data(goal_surf);
+    if(!goal_data)
+        goal_data = cairo_image_surface_get_data(goal_surf);
 
     int difference = 0;
 
@@ -248,7 +251,7 @@ win_handle_events(win_t *win, CairoXDrawable * c)
     cairo_surface_t * test_surf = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, WIDTH, HEIGHT);
     cairo_t * test_cr = cairo_create(test_surf);
 
-    cairo_surface_t * pngsurf = cairo_image_surface_create_from_png("velociraptor.png");
+    cairo_surface_t * pngsurf = cairo_image_surface_create_from_png("mona.png");
 
     cairo_surface_t * goalsurf = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, WIDTH, HEIGHT);
     cairo_t * goalcr = cairo_create(goalsurf);
@@ -287,7 +290,9 @@ win_handle_events(win_t *win, CairoXDrawable * c)
             // test sucks, copy best back over test
             dna_test[mutated_shape] = dna_best[mutated_shape];
 
-        printf("Step = %d/%d\nFitness = %0.6f%%\n", beststep, teststep, (MAX_FITNESS-lowestdiff) / (float)MAX_FITNESS);
+        if(teststep % 100 == 0)
+            printf("Step = %d/%d\nFitness = %0.6f%%\n",
+                    beststep, teststep, (MAX_FITNESS-lowestdiff) / (float)MAX_FITNESS);
 
         if(XPending(win->dpy))
         {
