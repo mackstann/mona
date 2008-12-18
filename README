@@ -1,0 +1,14 @@
+reddit mona lisa meme thing in c.
+
+written by nick welch <nick@incise.org>.  author disclaims copyright.
+
+WARNING to those who might scrutinize the code:
+
+the code is REALLY REALLY REALLY REALLY messy and ugly and bad.  i started off
+with some old code and frantically pulverized it into what it is.  the result
+is a mix of c and c++, different syntax styles, etc.  it's horrible.  i was in
+a rush, only had a few hours to do it, and needed to get to sleep to wake up
+for a flight the next day.  now it works and i have little motivation to go
+back and clean up something that was basically a random whim.  it's not
+impossible to understand or anything, but it's not pretty either.
+
