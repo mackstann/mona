@@ -32,3 +32,6 @@ to run:
 the path to the mona.png image is hardcoded in the source code, so without
 tweaking that, you must run it from same directory.
 
+feel free to modify the NUM_POINTS and NUM_SHAPES #defines to play around with
+different variations.
+
