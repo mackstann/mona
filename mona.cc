@@ -360,26 +360,19 @@ win_handle_events(win_t *win, CairoXDrawable * c)
 
         teststep++;
 
-#if 0
-        if(teststep % 100 == 0)
-            printf("Step = %d/%d\nFitness = %0.6f%%\n",
-                    beststep, teststep, (MAX_FITNESS-lowestdiff) / (float)MAX_FITNESS);
-#endif
-
+#ifdef QUITFAST
         GTimeVal t;
         g_get_current_time(&t);
-
-#ifdef QUITFAST
         if(t.tv_sec - start.tv_sec > 30)
-#else
-        if(teststep % 100 == 0)
-#endif
         {
             printf("%0.6f\n", ((MAX_FITNESS-lowestdiff) / (float)MAX_FITNESS)*100);
-#ifdef QUITFAST
             return;
-#endif
         }
+#else
+        if(teststep % 100 == 0)
+            printf("Step = %d/%d\nFitness = %0.6f%%\n",
+                    beststep, teststep, ((MAX_FITNESS-lowestdiff) / (float)MAX_FITNESS)*100);
+#endif
 
 #ifdef DRAW
         if(teststep % 100 == 0 && XPending(win->dpy))
