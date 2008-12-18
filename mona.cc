@@ -24,11 +24,11 @@ extern "C" {
 #define HEIGHT 200
 
 #ifndef NUM_POINTS
-#define NUM_POINTS 5
+#define NUM_POINTS 4
 #endif
 
 #ifndef NUM_SHAPES
-#define NUM_SHAPES 15
+#define NUM_SHAPES 25
 #endif
 
 using namespace std;
