@@ -174,15 +174,15 @@ int difference(cairo_surface_t * test_surf, cairo_surface_t * goal_surf)
     {
         for(int x = 0; x < WIDTH; x++)
         {
-            guchar test_a = test_data[y*WIDTH + x + 0];
-            guchar test_r = test_data[y*WIDTH + x + 1];
-            guchar test_g = test_data[y*WIDTH + x + 2];
-            guchar test_b = test_data[y*WIDTH + x + 3];
+            guchar test_a = test_data[y*WIDTH*4 + x*4 + 0];
+            guchar test_r = test_data[y*WIDTH*4 + x*4 + 1];
+            guchar test_g = test_data[y*WIDTH*4 + x*4 + 2];
+            guchar test_b = test_data[y*WIDTH*4 + x*4 + 3];
 
-            guchar goal_a = goal_data[y*WIDTH + x + 0];
-            guchar goal_r = goal_data[y*WIDTH + x + 1];
-            guchar goal_g = goal_data[y*WIDTH + x + 2];
-            guchar goal_b = goal_data[y*WIDTH + x + 3];
+            guchar goal_a = goal_data[y*WIDTH*4 + x*4 + 0];
+            guchar goal_r = goal_data[y*WIDTH*4 + x*4 + 1];
+            guchar goal_g = goal_data[y*WIDTH*4 + x*4 + 2];
+            guchar goal_b = goal_data[y*WIDTH*4 + x*4 + 3];
 
             if(MAX_FITNESS == -1)
                 my_max_fitness += goal_a + goal_r + goal_g + goal_b;
