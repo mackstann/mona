@@ -12,6 +12,9 @@ for a flight the next day.  now it works and i have little motivation to go
 back and clean up something that was basically a random whim.  it's not
 impossible to understand or anything, but it's not pretty either.
 
+also, one drawback vs. the web version is that you can't see the random
+attempts onscreen -- you only see the current "best" version.
+
 build requirements (ubuntu/debian package names):
 
     pkg-config
