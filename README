@@ -12,3 +12,23 @@ for a flight the next day.  now it works and i have little motivation to go
 back and clean up something that was basically a random whim.  it's not
 impossible to understand or anything, but it's not pretty either.
 
+build requirements (ubuntu/debian package names):
+
+    pkg-config
+    libx11-dev
+    libcairo2
+    libcairo2-dev
+    libglib2.0-0
+    libglib2.0-dev
+
+and of course g++ and make (build-essential package should cover it)
+
+to run:
+
+    make
+    ./mona
+    Control-C in terminal to quit
+
+the path to the mona.png image is hardcoded in the source code, so without
+tweaking that, you must run it from same directory.
+
