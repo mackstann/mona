@@ -252,22 +252,14 @@ win_handle_events(win_t *win, CairoXDrawable * c)
     cairo_t * test_cr = cairo_create(test_surf);
 
     cairo_surface_t * pngsurf = cairo_image_surface_create_from_png("mona.png");
-
     cairo_surface_t * goalsurf = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, WIDTH, HEIGHT);
     cairo_t * goalcr = cairo_create(goalsurf);
     copy_surf_to(pngsurf, goalcr);
 
-    draw_dna(dna_best, test_cr);
-    copy_surf_to(test_surf, xcr);
-    XCopyArea(win->dpy, win->pixmap, win->win, win->gc,
-            0, 0,
-            WIDTH, HEIGHT,
-            0, 0);
-
     int lowestdiff = G_MAXINT;
     int teststep = 0;
     int beststep = 0;
-    for(;;teststep++) {
+    for(;;) {
         mutate();
         draw_dna(dna_test, test_cr);
 
@@ -289,6 +281,8 @@ win_handle_events(win_t *win, CairoXDrawable * c)
         else
             // test sucks, copy best back over test
             dna_test[mutated_shape] = dna_best[mutated_shape];
+
+        teststep++;
 
         if(teststep % 100 == 0)
             printf("Step = %d/%d\nFitness = %0.6f%%\n",
