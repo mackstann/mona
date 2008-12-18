@@ -4,6 +4,8 @@
 // off with some old code and awkwardly retrofitted it into what it is.  the
 // result is a mix of c and c++, different syntax styles, etc.  it's horrible.
 // i was in a rush.
+//
+// written by nick welch <nick@incise.org>.  author disclaims copyright.
 
 #include <cstdio>
 #include <cstdlib>
@@ -27,6 +29,14 @@ extern "C" {
 
 #define WIDTH 200
 #define HEIGHT 200
+
+#ifndef NUM_POINTS
+#define NUM_POINTS 5
+#endif
+
+#ifndef NUM_SHAPES
+#define NUM_SHAPES 15
+#endif
 
 using namespace std;
 
@@ -53,9 +63,6 @@ struct CairoXDrawable {
     cairo_t * cr;
     Display * dpy;
 };
-
-#define NUM_POINTS 6
-#define NUM_SHAPES 100
 
 typedef struct {
     int x, y;
@@ -96,7 +103,12 @@ void draw_dna(shape_t * dna, cairo_t * cr)
         draw_shape(dna, cr, i);
 }
 
+#if 0
 #define RANDINT(max) (int)((random() / (double)RAND_MAX) * (max))
+#else
+#define RANDINT(max) g_random_int_range(0, (max))
+#endif
+
 #define RANDDOUBLE(max) ((random() / (double)RAND_MAX) * max)
 
 void init_dna(shape_t * dna)
@@ -108,51 +120,105 @@ void init_dna(shape_t * dna)
             dna[i].points[j].x = RANDINT(WIDTH);
             dna[i].points[j].y = RANDINT(HEIGHT);
         }
-        //dna[i].r = g_random_double();
-        //dna[i].g = g_random_double();
-        //dna[i].b = g_random_double();
-        //dna[i].a = g_random_double();
-        dna[i].r = 0;
-        dna[i].g = 0;
-        dna[i].b = 0;
-        dna[i].a = 0;
+        dna[i].r = g_random_double();
+        dna[i].g = g_random_double();
+        dna[i].b = g_random_double();
+        dna[i].a = g_random_double();
+        //dna[i].r = 0.5;
+        //dna[i].g = 0.5;
+        //dna[i].b = 0.5;
+        //dna[i].a = 1;
     }
 }
 
-void mutate(void)
+int mutate(void)
 {
     mutated_shape = RANDINT(NUM_SHAPES);
-    double roulette = RANDDOUBLE(2);
+    double roulette = RANDDOUBLE(2.8);
+    double drastic = RANDDOUBLE(2);
      
     // mutate color
     if(roulette<1)
     {
-        // red
-        if(roulette<0.25)
-            dna_test[mutated_shape].r = RANDDOUBLE(1);
-        // green
-        else if(roulette<0.5)
-            dna_test[mutated_shape].g = RANDDOUBLE(1);
-        // blue
+        if(dna_test[mutated_shape].a < 0.01 // completely transparent shapes are stupid
+                || roulette<0.25)
+        {
+            if(drastic < 1)
+            {
+                dna_test[mutated_shape].a += RANDDOUBLE(0.1);
+                dna_test[mutated_shape].a = CLAMP(dna_test[mutated_shape].a, 0.0, 1.0);
+            }
+            else
+                dna_test[mutated_shape].a = RANDDOUBLE(1.0);
+        }
+        else if(roulette<0.50)
+        {
+            if(drastic < 1)
+            {
+                dna_test[mutated_shape].r += RANDDOUBLE(0.1);
+                dna_test[mutated_shape].r = CLAMP(dna_test[mutated_shape].r, 0.0, 1.0);
+            }
+            else
+                dna_test[mutated_shape].r = RANDDOUBLE(1.0);
+        }
         else if(roulette<0.75)
-            dna_test[mutated_shape].b = RANDDOUBLE(1);
-        // alpha
-        else if(roulette<1.0)
-            dna_test[mutated_shape].a = RANDDOUBLE(1);
+        {
+            if(drastic < 1)
+            {
+                dna_test[mutated_shape].g += RANDDOUBLE(0.1);
+                dna_test[mutated_shape].g = CLAMP(dna_test[mutated_shape].g, 0.0, 1.0);
+            }
+            else
+                dna_test[mutated_shape].g = RANDDOUBLE(1.0);
+        }
+        else
+        {
+            if(drastic < 1)
+            {
+                dna_test[mutated_shape].b += RANDDOUBLE(0.1);
+                dna_test[mutated_shape].b = CLAMP(dna_test[mutated_shape].b, 0.0, 1.0);
+            }
+            else
+                dna_test[mutated_shape].b = RANDDOUBLE(1.0);
+        }
     }
     
     // mutate shape
-    else
+    else if(roulette < 2.0)
     {
         int point_i = RANDINT(NUM_POINTS);
-        
-        // x-coordinate
         if(roulette<1.5)
-            dna_test[mutated_shape].points[point_i].x = RANDINT(WIDTH);
-        // y-coordinate
+        {
+            if(drastic < 1)
+            {
+                dna_test[mutated_shape].points[point_i].x += (int)RANDDOUBLE(WIDTH/10.0);
+                dna_test[mutated_shape].points[point_i].x = CLAMP(dna_test[mutated_shape].points[point_i].x, 0, WIDTH-1);
+            }
+            else
+                dna_test[mutated_shape].points[point_i].x = RANDINT(WIDTH);
+        }
         else
-            dna_test[mutated_shape].points[point_i].y = RANDINT(HEIGHT);
+        {
+            if(drastic < 1)
+            {
+                dna_test[mutated_shape].points[point_i].y += (int)RANDDOUBLE(HEIGHT/10.0);
+                dna_test[mutated_shape].points[point_i].y = CLAMP(dna_test[mutated_shape].points[point_i].y, 0, HEIGHT-1);
+            }
+            else
+                dna_test[mutated_shape].points[point_i].y = RANDINT(HEIGHT);
+        }
     }
+
+    // mutate stacking
+    else
+    {
+        int destination = RANDINT(NUM_SHAPES);
+        shape_t s = dna_test[mutated_shape];
+        dna_test[mutated_shape] = dna_test[destination];
+        dna_test[destination] = s;
+        return destination;
+    }
+    return -1;
 
 }
 
@@ -174,15 +240,17 @@ int difference(cairo_surface_t * test_surf, cairo_surface_t * goal_surf)
     {
         for(int x = 0; x < WIDTH; x++)
         {
-            guchar test_a = test_data[y*WIDTH*4 + x*4 + 0];
-            guchar test_r = test_data[y*WIDTH*4 + x*4 + 1];
-            guchar test_g = test_data[y*WIDTH*4 + x*4 + 2];
-            guchar test_b = test_data[y*WIDTH*4 + x*4 + 3];
+            gint thispixel = y*WIDTH*4 + x*4;
 
-            guchar goal_a = goal_data[y*WIDTH*4 + x*4 + 0];
-            guchar goal_r = goal_data[y*WIDTH*4 + x*4 + 1];
-            guchar goal_g = goal_data[y*WIDTH*4 + x*4 + 2];
-            guchar goal_b = goal_data[y*WIDTH*4 + x*4 + 3];
+            guchar test_a = test_data[thispixel];
+            guchar test_r = test_data[thispixel + 1];
+            guchar test_g = test_data[thispixel + 2];
+            guchar test_b = test_data[thispixel + 3];
+
+            guchar goal_a = goal_data[thispixel];
+            guchar goal_r = goal_data[thispixel + 1];
+            guchar goal_g = goal_data[thispixel + 2];
+            guchar goal_b = goal_data[thispixel + 3];
 
             if(MAX_FITNESS == -1)
                 my_max_fitness += goal_a + goal_r + goal_g + goal_b;
@@ -235,18 +303,25 @@ win_init(win_t *win, Display *dpy)
 
     XSelectInput(win->dpy, win->win, ExposureMask);
 
+#ifdef DRAW
     XMapWindow(dpy, win->win);
+#endif
 }
 
 static void
 win_handle_events(win_t *win, CairoXDrawable * c)
 {
+    GTimeVal start;
+    g_get_current_time(&start);
+
     init_dna(dna_best);
     memcpy((void *)dna_test, (const void *)dna_best, sizeof(shape_t) * NUM_SHAPES);
 
+#ifdef DRAW
     cairo_surface_t * xsurf = cairo_xlib_surface_create(
             c->dpy, win->pixmap, DefaultVisual(win->dpy, DefaultScreen(win->dpy)), WIDTH, HEIGHT);
     cairo_t * xcr = cairo_create(xsurf);
+#endif
 
     cairo_surface_t * test_surf = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, WIDTH, HEIGHT);
     cairo_t * test_cr = cairo_create(test_surf);
@@ -260,7 +335,7 @@ win_handle_events(win_t *win, CairoXDrawable * c)
     int teststep = 0;
     int beststep = 0;
     for(;;) {
-        mutate();
+        int other_mutated = mutate();
         draw_dna(dna_test, test_cr);
 
         int diff = difference(test_surf, goalsurf);
@@ -271,24 +346,50 @@ win_handle_events(win_t *win, CairoXDrawable * c)
             beststep++;
             // test is good, copy to best
             dna_best[mutated_shape] = dna_test[mutated_shape];
+            if(other_mutated >= 0)
+                dna_best[other_mutated] = dna_test[other_mutated];
+#ifdef DRAW
             copy_surf_to(test_surf, xcr); // also copy to display
             XCopyArea(win->dpy, win->pixmap, win->win, win->gc,
                     0, 0,
                     WIDTH, HEIGHT,
                     0, 0);
+#endif
             lowestdiff = diff;
         }
         else
+        {
             // test sucks, copy best back over test
             dna_test[mutated_shape] = dna_best[mutated_shape];
+            if(other_mutated >= 0)
+                dna_test[other_mutated] = dna_best[other_mutated];
+        }
 
         teststep++;
 
+#if 0
         if(teststep % 100 == 0)
             printf("Step = %d/%d\nFitness = %0.6f%%\n",
                     beststep, teststep, (MAX_FITNESS-lowestdiff) / (float)MAX_FITNESS);
+#endif
 
-        if(XPending(win->dpy))
+        GTimeVal t;
+        g_get_current_time(&t);
+
+#ifdef QUITFAST
+        if(t.tv_sec - start.tv_sec > 30)
+#else
+        if(teststep % 100 == 0)
+#endif
+        {
+            printf("%0.6f\n", ((MAX_FITNESS-lowestdiff) / (float)MAX_FITNESS)*100);
+#ifdef QUITFAST
+            return;
+#endif
+        }
+
+#ifdef DRAW
+        if(teststep % 100 == 0 && XPending(win->dpy))
         {
             XEvent xev;
             XNextEvent(win->dpy, &xev);
@@ -300,6 +401,7 @@ win_handle_events(win_t *win, CairoXDrawable * c)
                             xev.xexpose.x, xev.xexpose.y);
             }
         }
+#endif
     }
 }
 
