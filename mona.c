@@ -327,7 +327,7 @@ mainloop(void)
 #ifdef QUITFAST
         struct timeval t;
         gettimeofday(&t, NULL);
-        if(t.tv_sec - start.tv_sec > 30)
+        if(t.tv_sec - start.tv_sec > QUITFAST)
         {
             printf("%0.6f\n", ((MAX_FITNESS-lowestdiff) / (float)MAX_FITNESS)*100);
             return;
