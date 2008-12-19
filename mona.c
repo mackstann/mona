@@ -38,7 +38,7 @@ Window win;
 GC gc;
 Pixmap pixmap;
 
-void win_init(void)
+void x_init(void)
 {
     if(!(dpy = XOpenDisplay(NULL)))
     {
@@ -357,7 +357,7 @@ win_handle_events(void)
 
 int main(void) {
     srandom(getpid() + time(NULL));
-    win_init();
+    x_init();
     win_handle_events();
 }
 
