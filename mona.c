@@ -24,8 +24,11 @@
 #include <cairo.h>
 #include <cairo-xlib.h>
 
-///////////////// X11 stuff /////////////
-#ifdef DRAW
+#define RANDINT(max) (int)((random() / (double)RAND_MAX) * (max))
+#define RANDDOUBLE(max) ((random() / (double)RAND_MAX) * max)
+
+//////////////////////// X11 stuff ////////////////////////
+#ifdef SHOWWINDOW
 
 #include <X11/Xlib.h>
 
@@ -62,7 +65,7 @@ void win_init(void)
     XMapWindow(dpy, win);
 }
 #endif
-///////////////// end X11 stuff /////////////
+//////////////////////// end X11 stuff ////////////////////////
 
 typedef struct {
     double x, y;
@@ -97,9 +100,6 @@ void draw_dna(shape_t * dna, cairo_t * cr)
     for(int i = 0; i < NUM_SHAPES; i++)
         draw_shape(dna, cr, i);
 }
-
-#define RANDINT(max) (int)((random() / (double)RAND_MAX) * (max))
-#define RANDDOUBLE(max) ((random() / (double)RAND_MAX) * max)
 
 void init_dna(shape_t * dna)
 {
@@ -276,7 +276,7 @@ win_handle_events(void)
     init_dna(dna_best);
     memcpy((void *)dna_test, (const void *)dna_best, sizeof(shape_t) * NUM_SHAPES);
 
-#ifdef DRAW
+#ifdef SHOWWINDOW
     cairo_surface_t * xsurf = cairo_xlib_surface_create(
             dpy, pixmap, DefaultVisual(dpy, screen), WIDTH, HEIGHT);
     cairo_t * xcr = cairo_create(xsurf);
@@ -305,7 +305,7 @@ win_handle_events(void)
             dna_best[mutated_shape] = dna_test[mutated_shape];
             if(other_mutated >= 0)
                 dna_best[other_mutated] = dna_test[other_mutated];
-#ifdef DRAW
+#ifdef SHOWWINDOW
             copy_surf_to(test_surf, xcr); // also copy to display
             XCopyArea(dpy, pixmap, win, gc,
                     0, 0,
@@ -338,7 +338,7 @@ win_handle_events(void)
                     beststep, teststep, ((MAX_FITNESS-lowestdiff) / (float)MAX_FITNESS)*100);
 #endif
 
-#ifdef DRAW
+#ifdef SHOWWINDOW
         if(teststep % 100 == 0 && XPending(dpy))
         {
             XEvent xev;
