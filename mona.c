@@ -268,7 +268,7 @@ void copy_surf_to(cairo_surface_t * surf, cairo_t * cr)
 }
 
 static void
-win_handle_events(void)
+mainloop(void)
 {
     struct timeval start;
     gettimeofday(&start, NULL);
@@ -358,6 +358,6 @@ win_handle_events(void)
 int main(void) {
     srandom(getpid() + time(NULL));
     x_init();
-    win_handle_events();
+    mainloop();
 }
 
