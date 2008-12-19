@@ -14,8 +14,8 @@
 #include <cairo-xlib.h>
 #include <X11/Xlib.h>
 
-#define WIDTH 330
-#define HEIGHT 173
+#define WIDTH 200
+#define HEIGHT 200
 
 #ifndef NUM_POINTS
 #define NUM_POINTS 6
@@ -65,7 +65,7 @@ void draw_shape(shape_t * dna, cairo_t * cr, int i)
 
 void draw_dna(shape_t * dna, cairo_t * cr)
 {
-    cairo_set_source_rgb(cr, 0.26, 0.42, 0.71);
+    cairo_set_source_rgb(cr, 1, 1, 1);
     cairo_rectangle(cr, 0, 0, WIDTH, HEIGHT);
     cairo_fill(cr);
     for(int i = 0; i < NUM_SHAPES; i++)
@@ -290,7 +290,7 @@ win_handle_events(win_t *win)
     cairo_surface_t * test_surf = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, WIDTH, HEIGHT);
     cairo_t * test_cr = cairo_create(test_surf);
 
-    cairo_surface_t * pngsurf = cairo_image_surface_create_from_png("whale.png");
+    cairo_surface_t * pngsurf = cairo_image_surface_create_from_png("mona.png");
     cairo_surface_t * goalsurf = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, WIDTH, HEIGHT);
     cairo_t * goalcr = cairo_create(goalsurf);
     copy_surf_to(pngsurf, goalcr);
