@@ -325,12 +325,19 @@ static void mainloop(cairo_surface_t * pngsurf)
 
         teststep++;
 
-#ifdef QUITFAST
+#ifdef TIMELIMIT
         struct timeval t;
         gettimeofday(&t, NULL);
-        if(t.tv_sec - start.tv_sec > QUITFAST)
+        if(t.tv_sec - start.tv_sec > TIMELIMIT)
         {
             printf("%0.6f\n", ((MAX_FITNESS-lowestdiff) / (float)MAX_FITNESS)*100);
+#ifdef DUMP
+            char filename[50];
+            sprintf(filename, "%d.data", getpid());
+            FILE * f = fopen(filename, "w");
+            fwrite(dna_best, sizeof(shape_t), NUM_SHAPES, f);
+            fclose(f);
+#endif
             return;
         }
 #else
