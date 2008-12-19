@@ -1,8 +1,5 @@
 // written by nick welch <nick@incise.org>.  author disclaims copyright.
 
-#define WIDTH 200
-#define HEIGHT 200
-
 #ifndef NUM_POINTS
 #define NUM_POINTS 6
 #endif
@@ -19,13 +16,19 @@
 #include <sys/time.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <limits.h>
 
-#include <glib.h>
 #include <cairo.h>
 #include <cairo-xlib.h>
 
 #define RANDINT(max) (int)((random() / (double)RAND_MAX) * (max))
 #define RANDDOUBLE(max) ((random() / (double)RAND_MAX) * max)
+#define ABS(val) ((val) < 0 ? -(val) : (val))
+#define CLAMP(val, min, max) ((val) < (min) ? (min) : \
+                              (val) > (max) ? (max) : (val))
+
+int WIDTH;
+int HEIGHT;
 
 //////////////////////// X11 stuff ////////////////////////
 #ifdef SHOWWINDOW
@@ -214,11 +217,11 @@ int mutate(void)
 
 int MAX_FITNESS = -1;
 
-guchar * goal_data = NULL;
+unsigned char * goal_data = NULL;
 
 int difference(cairo_surface_t * test_surf, cairo_surface_t * goal_surf)
 {
-    guchar * test_data = cairo_image_surface_get_data(test_surf);
+    unsigned char * test_data = cairo_image_surface_get_data(test_surf);
     if(!goal_data)
         goal_data = cairo_image_surface_get_data(goal_surf);
 
@@ -230,17 +233,17 @@ int difference(cairo_surface_t * test_surf, cairo_surface_t * goal_surf)
     {
         for(int x = 0; x < WIDTH; x++)
         {
-            gint thispixel = y*WIDTH*4 + x*4;
+            int thispixel = y*WIDTH*4 + x*4;
 
-            guchar test_a = test_data[thispixel];
-            guchar test_r = test_data[thispixel + 1];
-            guchar test_g = test_data[thispixel + 2];
-            guchar test_b = test_data[thispixel + 3];
+            unsigned char test_a = test_data[thispixel];
+            unsigned char test_r = test_data[thispixel + 1];
+            unsigned char test_g = test_data[thispixel + 2];
+            unsigned char test_b = test_data[thispixel + 3];
 
-            guchar goal_a = goal_data[thispixel];
-            guchar goal_r = goal_data[thispixel + 1];
-            guchar goal_g = goal_data[thispixel + 2];
-            guchar goal_b = goal_data[thispixel + 3];
+            unsigned char goal_a = goal_data[thispixel];
+            unsigned char goal_r = goal_data[thispixel + 1];
+            unsigned char goal_g = goal_data[thispixel + 2];
+            unsigned char goal_b = goal_data[thispixel + 3];
 
             if(MAX_FITNESS == -1)
                 my_max_fitness += goal_a + goal_r + goal_g + goal_b;
@@ -267,8 +270,7 @@ void copy_surf_to(cairo_surface_t * surf, cairo_t * cr)
     cairo_paint(cr);
 }
 
-static void
-mainloop(void)
+static void mainloop(cairo_surface_t * pngsurf)
 {
     struct timeval start;
     gettimeofday(&start, NULL);
@@ -285,12 +287,11 @@ mainloop(void)
     cairo_surface_t * test_surf = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, WIDTH, HEIGHT);
     cairo_t * test_cr = cairo_create(test_surf);
 
-    cairo_surface_t * pngsurf = cairo_image_surface_create_from_png("mona.png");
     cairo_surface_t * goalsurf = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, WIDTH, HEIGHT);
     cairo_t * goalcr = cairo_create(goalsurf);
     copy_surf_to(pngsurf, goalcr);
 
-    int lowestdiff = G_MAXINT;
+    int lowestdiff = INT_MAX;
     int teststep = 0;
     int beststep = 0;
     for(;;) {
@@ -355,9 +356,18 @@ mainloop(void)
     }
 }
 
-int main(void) {
+int main(int argc, char ** argv) {
+    cairo_surface_t * pngsurf;
+    if(argc == 1)
+        pngsurf = cairo_image_surface_create_from_png("mona.png");
+    else
+        pngsurf = cairo_image_surface_create_from_png(argv[1]);
+
+    WIDTH = cairo_image_surface_get_width(pngsurf);
+    HEIGHT = cairo_image_surface_get_height(pngsurf);
+
     srandom(getpid() + time(NULL));
     x_init();
-    mainloop();
+    mainloop(pngsurf);
 }
 
