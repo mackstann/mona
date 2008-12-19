@@ -1,5 +1,5 @@
-mona: Makefile mona.cc
-	g++ -DDRAW -Wall -pedantic -O3 `pkg-config --libs --cflags cairo x11 cairo-xlib glib-2.0` mona.cc -o mona
+mona: Makefile mona.c
+	gcc -DDRAW -Wall -std=gnu99 -pedantic -O3 `pkg-config --libs --cflags cairo x11 cairo-xlib glib-2.0` mona.c -o mona
 clean:
 	rm -f mona
 

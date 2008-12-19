@@ -1,64 +1,40 @@
 // written by nick welch <nick@incise.org>.  author disclaims copyright.
 
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-#include <cmath>
-#include <ctime>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <math.h>
+#include <time.h>
 
-extern "C" {
 #include <sys/types.h>
 #include <unistd.h>
-}
 
 #include <glib.h>
 #include <cairo.h>
 #include <cairo-xlib.h>
 #include <X11/Xlib.h>
 
-#include <vector>
-#include <string>
-#include <iostream>
-
-#define WIDTH 200
-#define HEIGHT 200
+#define WIDTH 330
+#define HEIGHT 173
 
 #ifndef NUM_POINTS
-#define NUM_POINTS 4
+#define NUM_POINTS 6
 #endif
 
 #ifndef NUM_SHAPES
-#define NUM_SHAPES 25
+#define NUM_SHAPES 40
 #endif
 
-using namespace std;
-
 typedef struct win {
-    Display *dpy;
+    Display * dpy;
     int scr;
     Window win;
     GC gc;
-    int width, height;
     Pixmap pixmap;
-    bool dirty;
 } win_t;
 
-struct CairoXDrawable {
-    CairoXDrawable(Display * dpy) : dpy(dpy)
-    {
-        this->surf = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, WIDTH, HEIGHT);
-        this->cr = cairo_create(this->surf);
-    }
-
-    ~CairoXDrawable() { cairo_destroy(this->cr); }
-
-    cairo_surface_t * surf;
-    cairo_t * cr;
-    Display * dpy;
-};
-
 typedef struct {
-    int x, y;
+    double x, y;
 } point_t;
 
 typedef struct {
@@ -89,7 +65,7 @@ void draw_shape(shape_t * dna, cairo_t * cr, int i)
 
 void draw_dna(shape_t * dna, cairo_t * cr)
 {
-    cairo_set_source_rgb(cr, 1, 1, 1);
+    cairo_set_source_rgb(cr, 0.26, 0.42, 0.71);
     cairo_rectangle(cr, 0, 0, WIDTH, HEIGHT);
     cairo_fill(cr);
     for(int i = 0; i < NUM_SHAPES; i++)
@@ -110,8 +86,8 @@ void init_dna(shape_t * dna)
     {
         for(int j = 0; j < NUM_POINTS; j++)
         {
-            dna[i].points[j].x = RANDINT(WIDTH);
-            dna[i].points[j].y = RANDINT(HEIGHT);
+            dna[i].points[j].x = RANDDOUBLE(WIDTH);
+            dna[i].points[j].y = RANDDOUBLE(HEIGHT);
         }
         dna[i].r = g_random_double();
         dna[i].g = g_random_double();
@@ -188,7 +164,7 @@ int mutate(void)
                 dna_test[mutated_shape].points[point_i].x = CLAMP(dna_test[mutated_shape].points[point_i].x, 0, WIDTH-1);
             }
             else
-                dna_test[mutated_shape].points[point_i].x = RANDINT(WIDTH);
+                dna_test[mutated_shape].points[point_i].x = RANDDOUBLE(WIDTH);
         }
         else
         {
@@ -198,7 +174,7 @@ int mutate(void)
                 dna_test[mutated_shape].points[point_i].y = CLAMP(dna_test[mutated_shape].points[point_i].y, 0, HEIGHT-1);
             }
             else
-                dna_test[mutated_shape].points[point_i].y = RANDINT(HEIGHT);
+                dna_test[mutated_shape].points[point_i].y = RANDDOUBLE(HEIGHT);
         }
     }
 
@@ -275,21 +251,16 @@ win_init(win_t *win, Display *dpy)
 {
     win->dpy = dpy;
 
-    win->width = WIDTH;
-    win->height = HEIGHT;
-
-    win->dirty = true;
-
     win->scr = DefaultScreen(dpy);
 
     XSetWindowAttributes attr;
     attr.background_pixmap = ParentRelative;
     win->win = XCreateWindow(dpy, DefaultRootWindow(dpy), 0, 0,
-                   win->width, win->height, 0,
+                   WIDTH, HEIGHT, 0,
                    DefaultDepth(dpy, win->scr), CopyFromParent, DefaultVisual(dpy, win->scr),
                    CWBackPixmap, &attr);
 
-    win->pixmap = XCreatePixmap(win->dpy, win->win, win->width, win->height,
+    win->pixmap = XCreatePixmap(win->dpy, win->win, WIDTH, HEIGHT,
             DefaultDepth(dpy, win->scr));
 
     win->gc = XCreateGC(win->dpy, win->pixmap, 0, NULL);
@@ -302,7 +273,7 @@ win_init(win_t *win, Display *dpy)
 }
 
 static void
-win_handle_events(win_t *win, CairoXDrawable * c)
+win_handle_events(win_t *win)
 {
     GTimeVal start;
     g_get_current_time(&start);
@@ -312,14 +283,14 @@ win_handle_events(win_t *win, CairoXDrawable * c)
 
 #ifdef DRAW
     cairo_surface_t * xsurf = cairo_xlib_surface_create(
-            c->dpy, win->pixmap, DefaultVisual(win->dpy, DefaultScreen(win->dpy)), WIDTH, HEIGHT);
+            win->dpy, win->pixmap, DefaultVisual(win->dpy, DefaultScreen(win->dpy)), WIDTH, HEIGHT);
     cairo_t * xcr = cairo_create(xsurf);
 #endif
 
     cairo_surface_t * test_surf = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, WIDTH, HEIGHT);
     cairo_t * test_cr = cairo_create(test_surf);
 
-    cairo_surface_t * pngsurf = cairo_image_surface_create_from_png("mona.png");
+    cairo_surface_t * pngsurf = cairo_image_surface_create_from_png("whale.png");
     cairo_surface_t * goalsurf = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, WIDTH, HEIGHT);
     cairo_t * goalcr = cairo_create(goalsurf);
     copy_surf_to(pngsurf, goalcr);
@@ -404,9 +375,7 @@ int main() {
     win_t win;
     win_init(&win, dpy);
 
-    CairoXDrawable c(win.dpy);
-
-    win_handle_events(&win, &c);
+    win_handle_events(&win);
 
     XFreeGC(win.dpy, win.gc);
     XFreePixmap(win.dpy, win.pixmap);
