@@ -1,19 +1,5 @@
 // written by nick welch <nick@incise.org>.  author disclaims copyright.
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <math.h>
-#include <time.h>
-
-#include <sys/types.h>
-#include <unistd.h>
-
-#include <glib.h>
-#include <cairo.h>
-#include <cairo-xlib.h>
-#include <X11/Xlib.h>
-
 #define WIDTH 200
 #define HEIGHT 200
 
@@ -25,13 +11,58 @@
 #define NUM_SHAPES 40
 #endif
 
-typedef struct win {
-    Display * dpy;
-    int scr;
-    Window win;
-    GC gc;
-    Pixmap pixmap;
-} win_t;
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <math.h>
+#include <time.h>
+#include <sys/time.h>
+#include <sys/types.h>
+#include <unistd.h>
+
+#include <glib.h>
+#include <cairo.h>
+#include <cairo-xlib.h>
+
+///////////////// X11 stuff /////////////
+#ifdef DRAW
+
+#include <X11/Xlib.h>
+
+Display * dpy;
+int screen;
+Window win;
+GC gc;
+Pixmap pixmap;
+
+void win_init(void)
+{
+    if(!(dpy = XOpenDisplay(NULL)))
+    {
+        fprintf(stderr, "Failed to open X display %s\n", XDisplayName(NULL));
+        exit(1);
+    }
+
+    screen = DefaultScreen(dpy);
+
+    XSetWindowAttributes attr;
+    attr.background_pixmap = ParentRelative;
+    win = XCreateWindow(dpy, DefaultRootWindow(dpy), 0, 0,
+                   WIDTH, HEIGHT, 0,
+                   DefaultDepth(dpy, screen), CopyFromParent, DefaultVisual(dpy, screen),
+                   CWBackPixmap, &attr);
+
+    pixmap = XCreatePixmap(dpy, win, WIDTH, HEIGHT,
+            DefaultDepth(dpy, screen));
+
+    gc = XCreateGC(dpy, pixmap, 0, NULL);
+
+    XSelectInput(dpy, win, ExposureMask);
+
+    XMapWindow(dpy, win);
+}
+#endif
+///////////////// end X11 stuff /////////////
 
 typedef struct {
     double x, y;
@@ -51,15 +82,10 @@ void draw_shape(shape_t * dna, cairo_t * cr, int i)
 {
     cairo_set_line_width(cr, 0);
     shape_t * shape = &dna[i];
-    //g_message("color %f %f %f %f", shape->r, shape->g, shape->b, shape->a);
     cairo_set_source_rgba(cr, shape->r, shape->g, shape->b, shape->a);
     cairo_move_to(cr, shape->points[0].x, shape->points[0].y);
-    //g_message("point %d %d", shape->points[0].x, shape->points[0].y);
     for(int j = 1; j < NUM_POINTS; j++)
-    {
-        //g_message("point %d %d", shape->points[j].x, shape->points[j].y);
         cairo_line_to(cr, shape->points[j].x, shape->points[j].y);
-    }
     cairo_fill(cr);
 }
 
@@ -72,12 +98,7 @@ void draw_dna(shape_t * dna, cairo_t * cr)
         draw_shape(dna, cr, i);
 }
 
-#if 0
 #define RANDINT(max) (int)((random() / (double)RAND_MAX) * (max))
-#else
-#define RANDINT(max) g_random_int_range(0, (max))
-#endif
-
 #define RANDDOUBLE(max) ((random() / (double)RAND_MAX) * max)
 
 void init_dna(shape_t * dna)
@@ -89,10 +110,10 @@ void init_dna(shape_t * dna)
             dna[i].points[j].x = RANDDOUBLE(WIDTH);
             dna[i].points[j].y = RANDDOUBLE(HEIGHT);
         }
-        dna[i].r = g_random_double();
-        dna[i].g = g_random_double();
-        dna[i].b = g_random_double();
-        dna[i].a = g_random_double();
+        dna[i].r = RANDDOUBLE(1);
+        dna[i].g = RANDDOUBLE(1);
+        dna[i].b = RANDDOUBLE(1);
+        dna[i].a = RANDDOUBLE(1);
         //dna[i].r = 0.5;
         //dna[i].g = 0.5;
         //dna[i].b = 0.5;
@@ -247,43 +268,17 @@ void copy_surf_to(cairo_surface_t * surf, cairo_t * cr)
 }
 
 static void
-win_init(win_t *win, Display *dpy)
+win_handle_events(void)
 {
-    win->dpy = dpy;
-
-    win->scr = DefaultScreen(dpy);
-
-    XSetWindowAttributes attr;
-    attr.background_pixmap = ParentRelative;
-    win->win = XCreateWindow(dpy, DefaultRootWindow(dpy), 0, 0,
-                   WIDTH, HEIGHT, 0,
-                   DefaultDepth(dpy, win->scr), CopyFromParent, DefaultVisual(dpy, win->scr),
-                   CWBackPixmap, &attr);
-
-    win->pixmap = XCreatePixmap(win->dpy, win->win, WIDTH, HEIGHT,
-            DefaultDepth(dpy, win->scr));
-
-    win->gc = XCreateGC(win->dpy, win->pixmap, 0, NULL);
-
-    XSelectInput(win->dpy, win->win, ExposureMask);
-
-#ifdef DRAW
-    XMapWindow(dpy, win->win);
-#endif
-}
-
-static void
-win_handle_events(win_t *win)
-{
-    GTimeVal start;
-    g_get_current_time(&start);
+    struct timeval start;
+    gettimeofday(&start, NULL);
 
     init_dna(dna_best);
     memcpy((void *)dna_test, (const void *)dna_best, sizeof(shape_t) * NUM_SHAPES);
 
 #ifdef DRAW
     cairo_surface_t * xsurf = cairo_xlib_surface_create(
-            win->dpy, win->pixmap, DefaultVisual(win->dpy, DefaultScreen(win->dpy)), WIDTH, HEIGHT);
+            dpy, pixmap, DefaultVisual(dpy, screen), WIDTH, HEIGHT);
     cairo_t * xcr = cairo_create(xsurf);
 #endif
 
@@ -303,8 +298,6 @@ win_handle_events(win_t *win)
         draw_dna(dna_test, test_cr);
 
         int diff = difference(test_surf, goalsurf);
-        //g_message("diff is %d", diff);
-        //g_message("lowestdiff is %d", lowestdiff);
         if(diff < lowestdiff)
         {
             beststep++;
@@ -314,7 +307,7 @@ win_handle_events(win_t *win)
                 dna_best[other_mutated] = dna_test[other_mutated];
 #ifdef DRAW
             copy_surf_to(test_surf, xcr); // also copy to display
-            XCopyArea(win->dpy, win->pixmap, win->win, win->gc,
+            XCopyArea(dpy, pixmap, win, gc,
                     0, 0,
                     WIDTH, HEIGHT,
                     0, 0);
@@ -332,8 +325,8 @@ win_handle_events(win_t *win)
         teststep++;
 
 #ifdef QUITFAST
-        GTimeVal t;
-        g_get_current_time(&t);
+        struct timeval t;
+        gettimeofday(&t, NULL);
         if(t.tv_sec - start.tv_sec > 30)
         {
             printf("%0.6f\n", ((MAX_FITNESS-lowestdiff) / (float)MAX_FITNESS)*100);
@@ -346,13 +339,13 @@ win_handle_events(win_t *win)
 #endif
 
 #ifdef DRAW
-        if(teststep % 100 == 0 && XPending(win->dpy))
+        if(teststep % 100 == 0 && XPending(dpy))
         {
             XEvent xev;
-            XNextEvent(win->dpy, &xev);
+            XNextEvent(dpy, &xev);
             switch(xev.type) {
                 case Expose:
-                    XCopyArea(win->dpy, win->pixmap, win->win, win->gc,
+                    XCopyArea(dpy, pixmap, win, gc,
                             xev.xexpose.x, xev.xexpose.y,
                             xev.xexpose.width, xev.xexpose.height,
                             xev.xexpose.x, xev.xexpose.y);
@@ -362,26 +355,9 @@ win_handle_events(win_t *win)
     }
 }
 
-int main() {
-
+int main(void) {
     srandom(getpid() + time(NULL));
-    Display * dpy = XOpenDisplay(NULL);
-
-    if (!dpy) {
-        fprintf(stderr, "Failed to open display: %s\n", XDisplayName(NULL));
-        return 1;
-    }
-
-    win_t win;
-    win_init(&win, dpy);
-
-    win_handle_events(&win);
-
-    XFreeGC(win.dpy, win.gc);
-    XFreePixmap(win.dpy, win.pixmap);
-    XDestroyWindow(win.dpy, win.win);
-    XCloseDisplay(dpy);
-
-    return 0;
+    win_init();
+    win_handle_events();
 }
 
